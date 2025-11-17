@@ -82,7 +82,7 @@ export class KingFinderScraper {
   async fetchRestaurantsAtLocation(lat: number, lng: number, radius: number = 50000): Promise<Restaurant[]> {
     if (!this.page) throw new Error('Page not initialized');
 
-    const result = await this.page.evaluate(async ({ lat, lng, radius }) => {
+    const result = await this.page.evaluate(async ({ lat, lng, radius }): Promise<{ error?: string; totalCount?: number; restaurants: any[] }> => {
       const query = `
         query GetRestaurants($input: RestaurantsInput) {
           restaurants(input: $input) {
@@ -145,7 +145,7 @@ export class KingFinderScraper {
           return { error: `HTTP ${response.status}`, restaurants: [] };
         }
 
-        const data = await response.json();
+        const data: any = await response.json();
 
         if (data && data.length > 0 && data[0].data && data[0].data.restaurants) {
           return {
