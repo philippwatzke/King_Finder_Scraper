@@ -1,0 +1,33 @@
+{
+  "name": "king-finder-scraper",
+  "version": "1.0.0",
+  "description": "🍔 Scraper for all Burger King locations in Germany with GPS coordinates",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "test": "ts-node src/test.ts",
+    "scrape": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "burger-king",
+    "scraper",
+    "locations",
+    "germany",
+    "gps",
+    "coordinates"
+  ],
+  "author": "philippwatzke",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.5",
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "cli-progress": "^3.12.0",
+    "playwright": "^1.40.1"
+  }
+}
