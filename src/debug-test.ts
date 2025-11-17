@@ -95,7 +95,9 @@ async function debugTest() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'x-ui-language': 'de',
+          'x-ui-region': 'DE'
         },
         body: JSON.stringify([{
           operationName: 'GetRestaurants',

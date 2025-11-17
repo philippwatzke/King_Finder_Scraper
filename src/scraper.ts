@@ -141,7 +141,9 @@ export class KingFinderScraper {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'x-ui-language': 'de',
+            'x-ui-region': 'DE'
           },
           credentials: 'include',
           body: JSON.stringify([{
