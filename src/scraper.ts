@@ -43,14 +43,20 @@ export class KingFinderScraper {
 
     this.browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ]
     });
 
     const context = await this.browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       viewport: { width: 1920, height: 1080 },
       locale: 'de-DE',
-      timezoneId: 'Europe/Berlin'
+      timezoneId: 'Europe/Berlin',
+      ignoreHTTPSErrors: true
     });
 
     this.page = await context.newPage();
@@ -82,7 +88,7 @@ export class KingFinderScraper {
   async fetchRestaurantsAtLocation(lat: number, lng: number, radius: number = 50000): Promise<Restaurant[]> {
     if (!this.page) throw new Error('Page not initialized');
 
-    const result = await this.page.evaluate(async ({ lat, lng, radius }): Promise<{ error?: string; totalCount?: number; restaurants: any[] }> => {
+    const result = await this.page.evaluate(async ({ lat, lng, radius }): Promise<{ error?: string; totalCount?: number; restaurants: any[]; statusCode?: number; responseBody?: string }> => {
       const query = `
         query GetRestaurants($input: RestaurantsInput) {
           restaurants(input: $input) {
@@ -133,7 +139,11 @@ export class KingFinderScraper {
       try {
         const response = await fetch('https://euc1-prod-bk.rbictg.com/graphql', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
           body: JSON.stringify([{
             operationName: 'GetRestaurants',
             variables,
@@ -141,24 +151,38 @@ export class KingFinderScraper {
           }])
         });
 
+        const statusCode = response.status;
+        const responseText = await response.text();
+
         if (!response.ok) {
-          return { error: `HTTP ${response.status}`, restaurants: [] };
+          console.error(`[API Error] HTTP ${statusCode}: ${responseText.substring(0, 100)}`);
+          return { error: `HTTP ${statusCode}: ${responseText.substring(0, 100)}`, restaurants: [], statusCode, responseBody: responseText };
         }
 
-        const data: any = await response.json();
+        const data: any = JSON.parse(responseText);
 
         if (data && data.length > 0 && data[0].data && data[0].data.restaurants) {
           return {
             totalCount: data[0].data.restaurants.totalCount,
-            restaurants: data[0].data.restaurants.nodes
+            restaurants: data[0].data.restaurants.nodes,
+            statusCode
           };
         }
 
-        return { restaurants: [] };
+        return { restaurants: [], statusCode, responseBody: responseText.substring(0, 200) };
       } catch (error: any) {
+        console.error(`[API Error] ${error.message}`);
         return { error: error.message, restaurants: [] };
       }
     }, { lat, lng, radius });
+
+    // Log errors for debugging
+    if (result.error) {
+      console.error(`\n⚠️  API Error at (${lat}, ${lng}): ${result.error}`);
+      if (result.responseBody) {
+        console.error(`   Response: ${result.responseBody.substring(0, 150)}`);
+      }
+    }
 
     return result.restaurants as Restaurant[];
   }
